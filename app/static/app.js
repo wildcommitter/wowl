@@ -52,13 +52,19 @@ function setTcp(row, state) {
   badge.className = "status tcp-badge status-" + (cls[state] || "unknown");
 }
 
-// When we auto-discover an IP, show it in the IP column (marked as detected).
-function fillIp(row, ip, discovered) {
-  if (!ip) return;
+// Show the address in the IP column: a resolved hostname as `host (ip)`, an
+// auto-discovered IP as `ip (auto)`, or a plain explicit IP as-is.
+function fillIp(row, ip, discovered, host) {
   const cell = row.querySelector("[data-ip-cell]");
   if (!cell) return;
-  const suffix = discovered ? ' <span class="hint">(auto)</span>' : "";
-  cell.innerHTML = `<code>${ip}</code>${suffix}`;
+  if (host) {
+    cell.innerHTML = ip
+      ? `<code>${host}</code> <span class="hint">(${ip})</span>`
+      : `<code>${host}</code>`;
+  } else if (ip) {
+    const suffix = discovered ? ' <span class="hint">(auto)</span>' : "";
+    cell.innerHTML = `<code>${ip}</code>${suffix}`;
+  }
 }
 
 async function checkOnce(row) {
@@ -69,7 +75,7 @@ async function checkOnce(row) {
   try {
     const res = await fetch(`/machines/${encodeURIComponent(mac)}/status`);
     const data = await res.json();
-    fillIp(row, data.ip, data.discovered);
+    fillIp(row, data.ip, data.discovered, data.host);
     setStatus(row, data.online ? "online" : "offline", describe(data));
     setTcp(row, data.tcp ? (data.tcp.open ? "open" : "closed") : "unknown");
     return data.online;

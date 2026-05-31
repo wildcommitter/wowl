@@ -223,49 +223,68 @@ def tcp_open(ip: str, port: int, timeout: float = 1.0) -> bool:
         return False
 
 
-def _resolve_ip(machine: dict[str, Any]) -> tuple[str | None, bool]:
-    """Return (ip, discovered). Uses an explicit ip, else the (sweeper-kept)
-    cache, else an on-demand sweep so manual checks / wake-polls stay responsive
-    even before the background sweeper has run."""
-    explicit = (machine.get("ip") or "").strip()
-    if explicit:
-        return explicit, False
+def _resolve_host(value: str) -> str | None:
+    """Resolve an explicit field (IPv4 address or hostname) to an IPv4 address.
 
-    key = normalize_mac(machine["mac"])
+    A plain IP returns unchanged; a hostname is looked up via DNS/NSS (so
+    `.local` mDNS names work where configured). Returns None if it can't resolve.
+    The ARP table and sweeps are IPv4-only, so we deliberately use IPv4 lookup.
+    """
+    try:
+        return socket.gethostbyname(value)
+    except OSError:
+        return None
+
+
+def _discover_via_mac(mac: str) -> str | None:
+    """Find a MAC's current IP via the sweeper-kept cache, else an on-demand
+    sweep so manual checks / wake-polls stay responsive before the background
+    sweeper has run."""
+    key = normalize_mac(mac)
     with _cache_lock:
         cached = _ip_cache.get(key)
     if cached:
-        return cached, True
+        return cached
 
-    found = discover_ip_for_mac(machine["mac"])
+    found = discover_ip_for_mac(mac)
     if found:
         with _cache_lock:
             _ip_cache[key] = found
-    return found, True
+    return found
 
 
 def check_machine(machine: dict[str, Any], timeout: float = 2.0) -> dict[str, Any]:
     """Combined reachability for a stored machine entry.
 
-    The IP is auto-discovered from the MAC when not set explicitly. `online` is
-    True if ARP resolves OR the optional TCP port is open. If the MAC can't be
-    found on any local subnet, the host is treated as offline (asleep).
+    If `ip` is set it may be an IPv4 address or a hostname (resolved via DNS);
+    otherwise the IP is auto-discovered from the MAC. `online` is driven by ARP
+    reachability alone; the optional TCP port is a separate signal.
     """
-    ip, discovered = _resolve_ip(machine)
-    if not ip:
-        return {
-            "online": False,
-            "ip": None,
-            "discovered": discovered,
-            "reason": "MAC not found on local subnet (asleep or off-subnet)",
-            "arp": None,
-            "tcp": None,
-        }
+    explicit = (machine.get("ip") or "").strip()
+    host: str | None = None
+    if explicit:
+        ip = _resolve_host(explicit)
+        discovered = False
+        host = explicit if ip != explicit else None  # show the name we resolved
+        if not ip:
+            return {
+                "online": False, "ip": None, "host": explicit, "discovered": False,
+                "reason": f"could not resolve '{explicit}'", "arp": None, "tcp": None,
+            }
+    else:
+        ip = _discover_via_mac(machine["mac"])
+        discovered = True
+        if not ip:
+            return {
+                "online": False, "ip": None, "host": None, "discovered": True,
+                "reason": "MAC not found on local subnet (asleep or off-subnet)",
+                "arp": None, "tcp": None,
+            }
 
     arp = arp_reachable(ip, machine.get("mac"), timeout=timeout)
 
-    # If a cached/discovered IP no longer answers, drop it so the next check
-    # re-sweeps (handles a host that changed IP via DHCP after sleeping).
+    # If a discovered IP no longer answers, drop it so the next check re-sweeps
+    # (handles a host that changed IP via DHCP after sleeping).
     if discovered and not arp["reachable"]:
         with _cache_lock:
             _ip_cache.pop(normalize_mac(machine["mac"]), None)
@@ -276,8 +295,8 @@ def check_machine(machine: dict[str, Any], timeout: float = 2.0) -> dict[str, An
         is_open = tcp_open(ip, int(tcp_port), timeout=min(1.0, timeout))
         tcp = {"port": int(tcp_port), "open": is_open}
 
-    # "online" is driven by ARP discovery alone; the TCP port is reported
+    # "online" is driven by ARP reachability alone; the TCP port is reported
     # separately as a secondary signal (a host answers ARP whether or not the
     # probed service is up).
     online = bool(arp["reachable"])
-    return {"online": online, "ip": ip, "discovered": discovered, "arp": arp, "tcp": tcp}
+    return {"online": online, "ip": ip, "host": host, "discovered": discovered, "arp": arp, "tcp": tcp}

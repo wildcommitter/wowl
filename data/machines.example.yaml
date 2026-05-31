@@ -5,7 +5,7 @@
 #   mac        (required) target MAC address
 #   broadcast  (optional) WoL broadcast address   [default 255.255.255.255]
 #   port       (optional) WoL UDP port            [default 9]
-#   ip         (optional) skip MAC->IP discovery for the status check
+#   ip         (optional) IP address OR hostname; skips MAC->IP discovery
 #   tcp_port   (optional) extra "service up?" probe, shown beside the status
 machines:
   # Minimal: name + MAC. IP is auto-discovered from the MAC for status.
@@ -24,3 +24,8 @@ machines:
     mac: "DE:AD:BE:EF:00:01"
     ip: "10.0.5.20"
     tcp_port: 22
+
+  # ip may also be a hostname — resolved via DNS/mDNS before probing.
+  - name: Laptop
+    mac: "CA:FE:00:00:00:01"
+    ip: "laptop.local"

@@ -23,6 +23,8 @@ no root (`CAP_NET_RAW`) and, by default, no configured IP:
    sweeping the local subnet — one throwaway UDP datagram per host makes the
    *kernel* emit ARP requests — then reading `/proc/net/arp` for the entry whose
    MAC matches. The discovered IP is shown in the list (marked *auto*).
+   Alternatively, set a machine's **IP or hostname** explicitly to skip
+   discovery — a hostname is resolved via DNS/mDNS (shown as `host (ip)`).
 2. **ARP reachability** drives the **online/offline** badge: any awake host on
    the subnet answers ARP.
 3. **Optional TCP port** (e.g. 22/3389) is probed as a *separate* signal shown
