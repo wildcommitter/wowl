@@ -9,8 +9,35 @@ human-editable **YAML** file.
 - Add / list / delete machines from the browser
 - One-click **Wake** — broadcasts a magic packet (`FF*6 + MAC*16`)
 - Per-machine broadcast address and port (defaults `255.255.255.255:9`)
+- **Live "woke up?" status** — tells you whether a machine is online, with the
+  IP discovered automatically from its MAC (no manual IP needed)
 - YAML storage you can hand-edit (`data/machines.yaml`)
 - No authentication — designed for a trusted LAN
+
+## Status / reachability
+
+Each machine shows a live status badge. Determining whether a host is up needs
+no root (`CAP_NET_RAW`) and, by default, no configured IP:
+
+1. **MAC → IP discovery.** ARP only maps IP→MAC, so the reverse is found by
+   sweeping the local subnet — one throwaway UDP datagram per host makes the
+   *kernel* emit ARP requests — then reading `/proc/net/arp` for the entry whose
+   MAC matches. The discovered IP is shown in the list (marked *auto*).
+2. **ARP reachability** drives the **online/offline** badge: any awake host on
+   the subnet answers ARP.
+3. **Optional TCP port** (e.g. 22/3389) is probed as a *separate* signal shown
+   beside the status (`:22 open` / `:22 closed`). It does **not** affect the
+   online badge — that is ARP-only.
+
+Discovery runs **continuously** in a background thread (every 15s) so a host
+powered on outside the UI is noticed automatically; the browser refreshes all
+rows every 20s, and a freshly **woken** machine is fast-polled every 3s for 30s.
+
+**Requirements & limits:** the target must be on the **same L2 subnet**, and the
+container must use **host networking** so it shares the host's ARP table (this is
+already required for WoL broadcasts). Subnets larger than a `/22` are not swept —
+set an explicit IP for those. If a host has multiple NICs, the WoL MAC must be
+the one that answers ARP for its IP.
 
 ## Requirements
 
@@ -119,11 +146,13 @@ built-in `GITHUB_TOKEN` — no extra secrets needed. Ensure the repo's
 
 ```
 app/
-  main.py        Flask routes
+  main.py        Flask routes (incl. /status, JSON wake)
   wol.py         magic-packet build + send
+  status.py      ARP MAC->IP discovery, reachability, periodic sweep
   storage.py     YAML read/write (locked)
   templates/     index.html
-  static/        style.css
+  static/        style.css, app.js (wake + live status polling)
+gunicorn.conf.py         bind address + starts the discovery sweep
 Dockerfile               multi-stage, non-root, venv-based (Docker)
 Containerfile            same, Podman variant (used by `podman build`)
 docker-compose.yml       host-networking deployment

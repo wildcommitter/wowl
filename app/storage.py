@@ -70,6 +70,8 @@ def add_machine(
     mac: str,
     broadcast: str = DEFAULT_BROADCAST,
     port: int = DEFAULT_PORT,
+    ip: str = "",
+    tcp_port: int | None = None,
 ) -> dict[str, Any]:
     name = name.strip()
     if not name:
@@ -80,7 +82,20 @@ def add_machine(
     if not (0 < port < 65536):
         raise ValueError("Port must be between 1 and 65535")
 
+    # ip and tcp_port are optional — used only for the woke-up status check.
+    ip = (ip or "").strip()
+    if tcp_port in (None, "", 0):
+        tcp_port = None
+    else:
+        tcp_port = int(tcp_port)
+        if not (0 < tcp_port < 65536):
+            raise ValueError("TCP port must be between 1 and 65535")
+
     entry = {"name": name, "mac": mac, "broadcast": broadcast, "port": port}
+    if ip:
+        entry["ip"] = ip
+    if tcp_port is not None:
+        entry["tcp_port"] = tcp_port
     with _lock:
         machines = _read()
         if any(normalize_mac(m["mac"]) == mac for m in machines):

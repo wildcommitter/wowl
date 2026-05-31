@@ -1,11 +1,26 @@
 # Example machine store. Copy to machines.yaml (or let the app create it).
-# Each entry: name, mac, and optional broadcast/port (defaults shown).
+#
+# Per entry:
+#   name       (required) display name
+#   mac        (required) target MAC address
+#   broadcast  (optional) WoL broadcast address   [default 255.255.255.255]
+#   port       (optional) WoL UDP port            [default 9]
+#   ip         (optional) skip MAC->IP discovery for the status check
+#   tcp_port   (optional) extra "service up?" probe, shown beside the status
 machines:
+  # Minimal: name + MAC. IP is auto-discovered from the MAC for status.
   - name: Desktop
     mac: "AA:BB:CC:DD:EE:FF"
-    broadcast: "255.255.255.255"
-    port: 9
+
+  # With an optional TCP port probe (RDP here). online is still ARP-only.
   - name: NAS
     mac: "11:22:33:44:55:66"
     broadcast: "192.168.1.255"
     port: 9
+    tcp_port: 445
+
+  # With an explicit IP (skips discovery — e.g. for a large subnet).
+  - name: Server
+    mac: "DE:AD:BE:EF:00:01"
+    ip: "10.0.5.20"
+    tcp_port: 22

@@ -55,11 +55,31 @@ code { background: rgba(255,255,255,0.06); padding: 0.1rem 0.35rem; border-radiu
   color: #fff;
 }
 .btn-wake { background: var(--green); }
+.btn-check { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
 .btn-delete { background: transparent; color: var(--red); border: 1px solid var(--red); }
 .btn-add { background: var(--accent); margin-top: 0.5rem; }
 .btn:hover { filter: brightness(1.1); }
+.btn:disabled { opacity: 0.5; cursor: default; filter: none; }
 
 .empty { color: var(--muted); }
+.muted { color: var(--muted); }
+.hint { color: var(--muted); font-weight: 400; font-size: 0.85em; }
+
+.status {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+.status-cell { white-space: nowrap; }
+.tcp-badge { margin-left: 0.4rem; font-size: 0.72rem; }
+.status-online { color: var(--green); border-color: var(--green); background: rgba(63,185,80,0.12); }
+.status-offline { color: var(--red); border-color: var(--red); background: rgba(240,80,110,0.12); }
+.status-checking { color: var(--accent); border-color: var(--accent); }
+.status-unknown, .status-no-ip { color: var(--muted); }
 
 .add-form { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem 1.2rem; }
 .add-form label { display: flex; flex-direction: column; font-size: 0.85rem; color: var(--muted); gap: 0.3rem; }

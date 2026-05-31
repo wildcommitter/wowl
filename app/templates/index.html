@@ -25,19 +25,27 @@
       {% if machines %}
         <table>
           <thead>
-            <tr><th>Name</th><th>MAC</th><th>Broadcast</th><th>Port</th><th></th></tr>
+            <tr><th>Name</th><th>MAC</th><th>IP</th><th>Status</th><th></th></tr>
           </thead>
           <tbody>
             {% for m in machines %}
-              <tr>
+              <tr data-mac="{{ m.mac }}">
                 <td>{{ m.name }}</td>
                 <td><code>{{ m.mac }}</code></td>
-                <td><code>{{ m.broadcast }}</code></td>
-                <td>{{ m.port }}</td>
+                <td data-ip-cell>
+                  {% if m.ip %}<code>{{ m.ip }}</code>
+                  {% else %}<span class="muted" title="Auto-detected from the MAC on status check">auto</span>{% endif %}
+                </td>
+                <td class="status-cell">
+                  <span class="status status-unknown" data-status title="ARP reachability">unknown</span>
+                  {% if m.tcp_port %}
+                    <span class="status status-unknown tcp-badge" data-tcp data-tcp-port="{{ m.tcp_port }}"
+                          title="TCP port {{ m.tcp_port }}">:{{ m.tcp_port }} ?</span>
+                  {% endif %}
+                </td>
                 <td class="actions">
-                  <form method="post" action="{{ url_for('wake_machine', mac=m.mac) }}">
-                    <button class="btn btn-wake" type="submit">Wake</button>
-                  </form>
+                  <button class="btn btn-wake" type="button" data-wake>Wake</button>
+                  <button class="btn btn-check" type="button" data-check>Check</button>
                   <form method="post" action="{{ url_for('delete_machine', mac=m.mac) }}"
                         onsubmit="return confirm('Delete {{ m.name }}?');">
                     <button class="btn btn-delete" type="submit">Delete</button>
@@ -65,12 +73,20 @@
         <label>Broadcast address
           <input type="text" name="broadcast" value="255.255.255.255">
         </label>
-        <label>Port
+        <label>WoL port
           <input type="number" name="port" value="9" min="1" max="65535">
+        </label>
+        <label>IP address <span class="hint">(optional — auto-detected from MAC if blank)</span>
+          <input type="text" name="ip" placeholder="auto">
+        </label>
+        <label>TCP port <span class="hint">(optional — status fallback)</span>
+          <input type="number" name="tcp_port" placeholder="22" min="1" max="65535">
         </label>
         <button class="btn btn-add" type="submit">Add machine</button>
       </form>
     </section>
   </main>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>

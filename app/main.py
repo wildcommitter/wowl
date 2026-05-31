@@ -1,10 +1,16 @@
 """Flask web app for storing machines and waking them via Wake-on-LAN."""
 from __future__ import annotations
 
-from flask import Flask, flash, redirect, render_template, request, url_for
+from flask import Flask, flash, jsonify, redirect, render_template, request, url_for
 
+from . import status as netstatus
 from . import storage
 from .wol import send_magic_packet
+
+
+def _wants_json() -> bool:
+    """True when the request comes from the fetch-based UI rather than a form."""
+    return request.headers.get("X-Requested-With") == "fetch"
 
 
 def create_app() -> Flask:
@@ -26,6 +32,8 @@ def create_app() -> Flask:
                 mac=request.form.get("mac", ""),
                 broadcast=request.form.get("broadcast", storage.DEFAULT_BROADCAST),
                 port=request.form.get("port", storage.DEFAULT_PORT) or storage.DEFAULT_PORT,
+                ip=request.form.get("ip", ""),
+                tcp_port=request.form.get("tcp_port", ""),
             )
             flash(f"Added {request.form.get('name')}.", "success")
         except (ValueError, TypeError) as exc:
@@ -36,6 +44,8 @@ def create_app() -> Flask:
     def wake_machine(mac: str):
         machine = storage.get_machine(mac)
         if machine is None:
+            if _wants_json():
+                return jsonify(ok=False, error="Machine not found"), 404
             flash("Machine not found.", "error")
             return redirect(url_for("index"))
         try:
@@ -44,10 +54,22 @@ def create_app() -> Flask:
                 broadcast=machine.get("broadcast", storage.DEFAULT_BROADCAST),
                 port=int(machine.get("port", storage.DEFAULT_PORT)),
             )
+            if _wants_json():
+                # We can always poll: the IP is auto-discovered from the MAC.
+                return jsonify(ok=True, name=machine["name"], can_poll=True)
             flash(f"Magic packet sent to {machine['name']}.", "success")
         except OSError as exc:
+            if _wants_json():
+                return jsonify(ok=False, error=str(exc)), 500
             flash(f"Failed to send packet: {exc}", "error")
         return redirect(url_for("index"))
+
+    @app.get("/machines/<mac>/status")
+    def machine_status(mac: str):
+        machine = storage.get_machine(mac)
+        if machine is None:
+            return jsonify(online=None, error="Machine not found"), 404
+        return jsonify(netstatus.check_machine(machine))
 
     @app.post("/machines/<mac>/delete")
     def delete_machine(mac: str):
@@ -69,6 +91,14 @@ app = create_app()
 
 if __name__ == "__main__":
     import os
+
+    # Start the periodic discovery sweep. Under the Werkzeug auto-reloader only
+    # the child process (WERKZEUG_RUN_MAIN=true) should run it, not the
+    # supervisor — otherwise it would sweep twice.
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        netstatus.start_discovery(
+            lambda: [m["mac"] for m in storage.list_machines()]
+        )
 
     # Mirror the gunicorn WOWL_BIND_ADDRESS env var for the dev server.
     bind = os.environ.get("WOWL_BIND_ADDRESS", "0.0.0.0:8080")
