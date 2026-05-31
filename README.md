@@ -45,10 +45,19 @@ The image runs as a non-root user. Because `data/` is a bind mount you can
 hand-edit, the container must be mapped to your host user so it can write the
 YAML file (otherwise you get a `Permission denied` on `machines.yaml`).
 
+There are two build files, one per engine — each tool picks its own with no
+`-f` flag needed:
+
+- **`Containerfile`** — used by `podman build .` (preferred over `Dockerfile`)
+- **`Dockerfile`** — used by `docker build .`
+
+The two are identical except that the `Containerfile` notes Podman's
+HEALTHCHECK/`--format docker` caveat.
+
 **Podman (rootless):**
 
 ```bash
-podman build -t wolw .
+podman build -t wowl .          # uses Containerfile
 
 podman run -d --name wolw \
   --network host \
@@ -60,6 +69,8 @@ podman run -d --name wolw \
 **Docker:**
 
 ```bash
+docker build -t wowl .          # uses Dockerfile
+
 docker run -d --name wolw \
   --network host \
   --user "$(id -u):$(id -g)" \
@@ -110,7 +121,8 @@ app/
   storage.py     YAML read/write (locked)
   templates/     index.html
   static/        style.css
-Dockerfile               multi-stage, non-root, venv-based
+Dockerfile               multi-stage, non-root, venv-based (Docker)
+Containerfile            same, Podman variant (used by `podman build`)
 docker-compose.yml       host-networking deployment
-.github/workflows/       build + publish on semver tag
+.github/workflows/       build + publish on semver tag (uses Dockerfile)
 ```

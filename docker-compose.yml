@@ -8,8 +8,10 @@
 # UID/GID default to 1000; override by exporting UID/GID before `podman compose up`.
 services:
   wolw:
-    image: ghcr.io/wildcommitter/wowl:latest   # or use `build: .`
-    # build: .                          # uncomment to build locally instead
+    image: ghcr.io/wildcommitter/wowl:latest   # or use the build block below
+    # build:                            # uncomment to build locally with Podman
+    #   context: .
+    #   dockerfile: Containerfile        # Docker users: change to Dockerfile
     network_mode: host
     userns_mode: keep-id                # Podman: map container user -> host user
     user: "${UID:-1000}:${GID:-1000}"
