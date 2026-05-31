@@ -16,7 +16,8 @@ services:
     userns_mode: keep-id                # Podman: map container user -> host user
     user: "${UID:-1000}:${GID:-1000}"
     environment:
-      WOLW_DATA_FILE: /data/machines.yaml
+      WOWL_DATA_FILE: /data/machines.yaml
+      WOWL_BIND_ADDRESS: 0.0.0.0:8080   # gunicorn HOST:PORT
     volumes:
       - ./data:/data:Z
     restart: unless-stopped

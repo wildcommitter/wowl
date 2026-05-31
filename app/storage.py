@@ -27,7 +27,7 @@ _lock = threading.Lock()
 
 
 def _data_path() -> str:
-    return os.environ.get("WOLW_DATA_FILE", "/data/machines.yaml")
+    return os.environ.get("WOWL_DATA_FILE", "/data/machines.yaml")
 
 
 def _read() -> list[dict[str, Any]]:

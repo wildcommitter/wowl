@@ -26,7 +26,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 # Choose where the YAML store lives (defaults to /data/machines.yaml)
-export WOLW_DATA_FILE="$PWD/data/machines.yaml"
+export WOWL_DATA_FILE="$PWD/data/machines.yaml"
 
 # Dev server
 python -m app.main
@@ -90,11 +90,14 @@ podman compose up -d      # or: docker compose up -d
 
 ## Configuration
 
-| Env var          | Default               | Purpose                          |
-| ---------------- | --------------------- | -------------------------------- |
-| `WOLW_DATA_FILE` | `/data/machines.yaml` | Path to the YAML machine store   |
+| Env var               | Default               | Purpose                                  |
+| --------------------- | --------------------- | ---------------------------------------- |
+| `WOWL_DATA_FILE`      | `/data/machines.yaml` | Path to the YAML machine store           |
+| `WOWL_BIND_ADDRESS`   | `0.0.0.0:8080`        | gunicorn `HOST:PORT` to listen on        |
 
-The app listens on port **8080**. A health check is exposed at `/healthz`.
+A health check is exposed at `/healthz`. If you change `WOWL_BIND_ADDRESS` to a
+non-default port, update the port in the image's `HEALTHCHECK` accordingly (it
+probes `:8080`).
 
 ## Publishing images (GitHub Actions)
 
