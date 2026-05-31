@@ -105,11 +105,15 @@ docker run -d --name wolw \
   ghcr.io/wildcommitter/wowl:latest
 ```
 
-Or with Compose:
+Or with Compose — one file per engine (each is tuned for its tool):
 
 ```bash
-podman compose up -d      # or: docker compose up -d
+podman compose -f compose.yaml up -d            # Podman (keep-id user mapping)
+docker compose -f docker-compose.yaml up -d     # Docker
 ```
+
+(Both tools default to `compose.yaml` when no `-f` is given, so pass `-f` to be
+explicit about which file you mean.)
 
 > Alternatively, use a **named volume** (`-v wolw-data:/data`) instead of a bind
 > mount — it works without the user mapping, but the YAML lives inside the
@@ -155,6 +159,7 @@ app/
 gunicorn.conf.py         bind address + starts the discovery sweep
 Dockerfile               multi-stage, non-root, venv-based (Docker)
 Containerfile            same, Podman variant (used by `podman build`)
-docker-compose.yml       host-networking deployment
+compose.yaml             host-networking deployment (Podman; keep-id)
+docker-compose.yaml      host-networking deployment (Docker)
 .github/workflows/       build + publish on semver tag (uses Dockerfile)
 ```

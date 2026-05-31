@@ -1,23 +1,25 @@
+# Docker Compose file  (`docker compose up -d`).
+# Podman users: see compose.yaml instead.
+#
 # Host networking is required so the magic packet can be broadcast onto your LAN.
 # With network_mode: host the app listens directly on the host's port 8080.
 #
 # The image runs as a non-root user, and the YAML store is a bind mount so you
-# can hand-edit data/machines.yaml. For the container to write to that host
-# directory under rootless Podman, map the container user to your host user:
-#   userns_mode: keep-id  +  user: <your uid>:<your gid>
-# UID/GID default to 1000; override by exporting UID/GID before `podman compose up`.
+# can hand-edit data/machines.yaml. Docker maps the container user straight to
+# the host user, so just set `user` to your uid:gid for write access (no
+# userns_mode: keep-id — that is Podman-only). UID/GID default to 1000; override
+# by exporting UID/GID before `docker compose up`.
 services:
   wolw:
     image: ghcr.io/wildcommitter/wowl:latest   # or use the build block below
-    # build:                            # uncomment to build locally with Podman
+    # build:                            # uncomment to build locally with Docker
     #   context: .
-    #   dockerfile: Containerfile        # Docker users: change to Dockerfile
+    #   dockerfile: Dockerfile           # Docker build file
     network_mode: host
-    userns_mode: keep-id                # Podman: map container user -> host user
     user: "${UID:-1000}:${GID:-1000}"
     environment:
       WOWL_DATA_FILE: /data/machines.yaml
       WOWL_BIND_ADDRESS: 0.0.0.0:8080   # gunicorn HOST:PORT
     volumes:
-      - ./data:/data:Z
+      - ./data:/data
     restart: unless-stopped
