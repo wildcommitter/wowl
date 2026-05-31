@@ -1,0 +1,10 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+data/
+!data/machines.example.yaml
+*.local.yaml
+.DS_Store

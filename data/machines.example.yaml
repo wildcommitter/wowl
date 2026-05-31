@@ -1,0 +1,11 @@
+# Example machine store. Copy to machines.yaml (or let the app create it).
+# Each entry: name, mac, and optional broadcast/port (defaults shown).
+machines:
+  - name: Desktop
+    mac: "AA:BB:CC:DD:EE:FF"
+    broadcast: "255.255.255.255"
+    port: 9
+  - name: NAS
+    mac: "11:22:33:44:55:66"
+    broadcast: "192.168.1.255"
+    port: 9

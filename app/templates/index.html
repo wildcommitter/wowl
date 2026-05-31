@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WoLW — Wake on LAN</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main>
+    <h1>⏻ Wake on LAN</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="flashes">
+          {% for category, message in messages %}
+            <li class="flash flash-{{ category }}">{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <section class="card">
+      <h2>Machines</h2>
+      {% if machines %}
+        <table>
+          <thead>
+            <tr><th>Name</th><th>MAC</th><th>Broadcast</th><th>Port</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for m in machines %}
+              <tr>
+                <td>{{ m.name }}</td>
+                <td><code>{{ m.mac }}</code></td>
+                <td><code>{{ m.broadcast }}</code></td>
+                <td>{{ m.port }}</td>
+                <td class="actions">
+                  <form method="post" action="{{ url_for('wake_machine', mac=m.mac) }}">
+                    <button class="btn btn-wake" type="submit">Wake</button>
+                  </form>
+                  <form method="post" action="{{ url_for('delete_machine', mac=m.mac) }}"
+                        onsubmit="return confirm('Delete {{ m.name }}?');">
+                    <button class="btn btn-delete" type="submit">Delete</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty">No machines yet. Add one below.</p>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <h2>Add a machine</h2>
+      <form method="post" action="{{ url_for('add_machine') }}" class="add-form">
+        <label>Name
+          <input type="text" name="name" placeholder="Desktop" required>
+        </label>
+        <label>MAC address
+          <input type="text" name="mac" placeholder="AA:BB:CC:DD:EE:FF" required
+                 pattern="([0-9A-Fa-f]{2}[:\-]){5}[0-9A-Fa-f]{2}">
+        </label>
+        <label>Broadcast address
+          <input type="text" name="broadcast" value="255.255.255.255">
+        </label>
+        <label>Port
+          <input type="number" name="port" value="9" min="1" max="65535">
+        </label>
+        <button class="btn btn-add" type="submit">Add machine</button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

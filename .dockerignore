@@ -1,0 +1,13 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.git/
+.github/
+data/
+*.yaml
+!requirements.txt
+.dockerignore
+Dockerfile
+README.md
+.gitignore

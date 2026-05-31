@@ -1,0 +1,20 @@
+# Host networking is required so the magic packet can be broadcast onto your LAN.
+# With network_mode: host the app listens directly on the host's port 8080.
+#
+# The image runs as a non-root user, and the YAML store is a bind mount so you
+# can hand-edit data/machines.yaml. For the container to write to that host
+# directory under rootless Podman, map the container user to your host user:
+#   userns_mode: keep-id  +  user: <your uid>:<your gid>
+# UID/GID default to 1000; override by exporting UID/GID before `podman compose up`.
+services:
+  wolw:
+    image: ghcr.io/OWNER/REPO:latest   # replace OWNER/REPO, or use `build: .`
+    # build: .                          # uncomment to build locally instead
+    network_mode: host
+    userns_mode: keep-id                # Podman: map container user -> host user
+    user: "${UID:-1000}:${GID:-1000}"
+    environment:
+      WOLW_DATA_FILE: /data/machines.yaml
+    volumes:
+      - ./data:/data:Z
+    restart: unless-stopped
