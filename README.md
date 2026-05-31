@@ -54,7 +54,7 @@ podman run -d --name wolw \
   --network host \
   --userns=keep-id --user "$(id -u):$(id -g)" \
   -v "$PWD/data:/data:Z" \
-  ghcr.io/OWNER/REPO:latest
+  ghcr.io/wildcommitter/wowl:latest
 ```
 
 **Docker:**
@@ -64,10 +64,10 @@ docker run -d --name wolw \
   --network host \
   --user "$(id -u):$(id -g)" \
   -v "$PWD/data:/data" \
-  ghcr.io/OWNER/REPO:latest
+  ghcr.io/wildcommitter/wowl:latest
 ```
 
-Or with Compose (edit the image / `OWNER/REPO` first):
+Or with Compose:
 
 ```bash
 podman compose up -d      # or: docker compose up -d
@@ -95,7 +95,7 @@ git tag v1.2.3
 git push origin v1.2.3
 ```
 
-This publishes `ghcr.io/OWNER/REPO` tagged `1.2.3`, `1.2`, `1`, and `latest`
+This publishes `ghcr.io/wildcommitter/wowl` tagged `1.2.3`, `1.2`, `1`, and `latest`
 (pre-release tags like `v1.2.3-rc.1` skip `latest`). The workflow uses the
 built-in `GITHUB_TOKEN` — no extra secrets needed. Ensure the repo's
 **Settings → Actions → Workflow permissions** allow package writes (or the job's
